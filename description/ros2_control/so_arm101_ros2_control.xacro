@@ -6,12 +6,12 @@
   <ros2_control name="LucyHardwareSoArm" type="system">
     <hardware>
       <plugin>lucy_ros2_control/LucySystemHardware</plugin>
+      <param name="node_name">so_arm</param>
       <xacro:if value="$(arg use_mock_hardware)">
         <param name="publish_actuators">false</param>
       </xacro:if>
       <xacro:unless value="$(arg use_mock_hardware)">
         <param name="publisher_topic">actuators/so_arm</param>
-        <param name="node_name">lucy_hardware_interface_so_arm</param>
       </xacro:unless>
     </hardware>
       <joint name="Rotation">
