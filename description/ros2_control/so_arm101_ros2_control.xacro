@@ -22,8 +22,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-110</param>
-        <param name="servo_max_deg">110</param>
+        <param name="servo_min_deg">80</param>
+        <param name="servo_max_deg">320</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-1.91986</param>
@@ -39,8 +39,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-100</param>
-        <param name="servo_max_deg">100</param>
+        <param name="servo_min_deg">75</param>
+        <param name="servo_max_deg">290</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-1.74533</param>
@@ -56,8 +56,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-100</param>
-        <param name="servo_max_deg">90</param>
+        <param name="servo_min_deg">140</param>
+        <param name="servo_max_deg">275</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-1.74533</param>
@@ -73,8 +73,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-95</param>
-        <param name="servo_max_deg">95</param>
+        <param name="servo_min_deg">74</param>
+        <param name="servo_max_deg">281</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-1.65806</param>
@@ -90,8 +90,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-160</param>
-        <param name="servo_max_deg">160</param>
+        <param name="servo_min_deg">0</param>
+        <param name="servo_max_deg">360</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-2.79253</param>
@@ -107,8 +107,8 @@
         <param name="offset_deg">0</param>
         <param name="direction">1</param>
         <param name="scale">1</param>
-        <param name="servo_min_deg">-10</param>
-        <param name="servo_max_deg">100</param>
+        <param name="servo_min_deg">115</param>
+        <param name="servo_max_deg">250</param>
         <param name="servo_default_deg">0</param>
         <command_interface name="position">
           <param name="min">-0.174533</param>
