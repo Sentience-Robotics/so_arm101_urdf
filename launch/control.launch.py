@@ -20,11 +20,26 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction,OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
 import yaml
 
+
+
+def controllers_to_spawn(controllers_yaml_path: Path) -> list[str]:
+    """Return controller names under controller_manager.ros__parameters (except update_rate)."""
+    data = yaml.safe_load(controllers_yaml_path.read_text(encoding='utf-8')) or {}
+    cm_params = data.get('controller_manager', {}).get('ros__parameters', {})
+    if not isinstance(cm_params, dict):
+        return []
+    names = [name for name in cm_params.keys() if name != 'update_rate']
+    jsb = 'joint_state_broadcaster'
+    if jsb in names:
+        names.remove(jsb)
+        return [jsb, *names]
+    return names
 
 _DEFAULT_GENERATED_FILES = {
     "ros2_control_xacro": "so_arm101_ros2_control.xacro",
@@ -107,6 +122,32 @@ def generate_launch_description():
         description="Generated ros2_control xacro basename (generated_files in active.yaml)",
     )
 
+    cm = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[LaunchConfiguration("controllers_yaml")],
+        output="screen",
+    )
+
+    def create_spawner(name: str, delay: float = 0.0):
+        spawner = Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=[name, "--switch-timeout", "10"],
+            output="screen",
+            parameters=[{"use_sim_time": True}],
+        )
+        if delay > 0.0:
+            return TimerAction(period=delay, actions=[spawner])
+        return spawner
+
+    def spawner_actions_from_yaml(context, *args, **kwargs):
+        yaml_path = LaunchConfiguration("controllers_yaml").perform(context)
+        names = controllers_to_spawn(Path(yaml_path))
+        return [
+            create_spawner(name, delay=float(idx * 2)) for idx, name in enumerate(names)
+        ]
+
     supervisor_launch = TimerAction(
         period=2.0,
         actions=[
@@ -135,6 +176,8 @@ def generate_launch_description():
             base_path_arg,
             use_mock_hardware_arg,
             ros2_control_file_arg,
-            supervisor_launch,
+            cm,
+            OpaqueFunction(function=spawner_actions_from_yaml),
+            #supervisor_launch,
         ]
     )
