@@ -319,7 +319,7 @@
     <parent link="upper_arm"/>
     <child link="lower_arm"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-1.74533" upper="1.5708"/>
+    <limit effort="10" velocity="10" lower="-1.178" upper="1.178"/>
   </joint>
 
   <joint name="Wrist_Pitch" type="revolute">

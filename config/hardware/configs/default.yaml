@@ -29,6 +29,7 @@ boards:
       type: joint_trajectory_controller/JointTrajectoryController
 
 actuators:
+# offset_deg is the servo angle at joint zero; these are window midpoints, not measured.
   # STS3215 smart bus servos — mapped to Lucy PWM schema (servo_type 300) until
   # bus-servo hardware support lands. Negative min degrees match URDF joint span.
   - id: rotation
@@ -37,12 +38,12 @@ actuators:
     virtual_pin: 0
     physical_pin: 1
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 200
     direction: 1
     scale: 1
     servo_min_deg: 80
     servo_max_deg: 320
-    servo_default_deg: 0
+    servo_default_deg: 200
     enabled: true
   - id: pitch
     urdf_joint: Pitch
@@ -50,12 +51,12 @@ actuators:
     virtual_pin: 1
     physical_pin: 2
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 182.5
     direction: 1
     scale: 1
     servo_min_deg: 75
     servo_max_deg: 290
-    servo_default_deg: 0
+    servo_default_deg: 182.5
     enabled: true
 
   - id: elbow
@@ -64,12 +65,12 @@ actuators:
     virtual_pin: 2
     physical_pin: 3
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 207.5
     direction: 1
     scale: 1
     servo_min_deg: 140
     servo_max_deg: 275
-    servo_default_deg: 0
+    servo_default_deg: 207.5
     enabled: true
   - id: wrist_pitch
     urdf_joint: Wrist_Pitch
@@ -77,12 +78,12 @@ actuators:
     virtual_pin: 3
     physical_pin: 4
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 177.5
     direction: 1
     scale: 1
     servo_min_deg: 74
     servo_max_deg: 281
-    servo_default_deg: 0
+    servo_default_deg: 177.5
     enabled: true
   - id: wrist_roll
     urdf_joint: Wrist_Roll
@@ -90,12 +91,12 @@ actuators:
     virtual_pin: 4
     physical_pin: 5
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 90
     direction: 1
     scale: 1
     servo_min_deg: 0
     servo_max_deg: 360
-    servo_default_deg: 0
+    servo_default_deg: 180
     enabled: true
   - id: jaw
     urdf_joint: Jaw
@@ -103,12 +104,12 @@ actuators:
     virtual_pin: 5
     physical_pin: 6
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 137.5
     direction: 1
     scale: 1
     servo_min_deg: 115
     servo_max_deg: 250
-    servo_default_deg: 0
+    servo_default_deg: 137.5
     enabled: true
 
 sensors:
