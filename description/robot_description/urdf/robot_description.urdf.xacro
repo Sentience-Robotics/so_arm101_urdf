@@ -319,7 +319,10 @@
     <parent link="upper_arm"/>
     <child link="lower_arm"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-1.74533" upper="1.5708"/>
+    <!-- Hard stops recorded by the follower calibration (866..3083 ticks about a
+         2048 centre). The previous +-1.178 was a guess: the servo window shipped
+         alongside it restated the same number, so nothing here was measured. -->
+    <limit effort="10" velocity="10" lower="-1.81317" upper="1.58767"/>
   </joint>
 
   <joint name="Wrist_Pitch" type="revolute">
