@@ -44,7 +44,7 @@ so_arm101_urdf/
 │       ├── active_meta.yaml
 │       └── configs/default.yaml
 ├── description/
-│   ├── urdf/so_arm101.urdf.xacro
+│   ├── urdf/robot.urdf.xacro
 │   ├── robot_description/
 │   │   ├── urdf/properties.xacro
 │   │   ├── urdf/robot_description.urdf.xacro
@@ -115,7 +115,7 @@ LUCY_ROBOT_PACKAGE=so_arm101_urdf pixi run core
 
 ## 6. Xacro entry
 
-`description/urdf/so_arm101.urdf.xacro`:
+`description/urdf/robot.urdf.xacro`:
 
 - Includes properties + body
 - Unless `use_gazebo_sim`: includes generated `so_arm101_ros2_control.xacro`
@@ -124,7 +124,7 @@ LUCY_ROBOT_PACKAGE=so_arm101_urdf pixi run core
 Standalone expand:
 
 ```bash
-ros2 run xacro xacro description/urdf/so_arm101.urdf.xacro \
+ros2 run xacro xacro description/urdf/robot.urdf.xacro \
   base_path:=$(pwd)/description \
   controller_config:=$(pwd)/config/controllers.yaml \
   use_mock_hardware:=true
@@ -173,7 +173,7 @@ OUT=/tmp/so_arm101_gen
 mkdir -p "$OUT"
 generate_config \
   --input src/so_arm101_urdf/config/hardware/active.yaml \
-  --urdf src/so_arm101_urdf/description/urdf/so_arm101.urdf.xacro \
+  --urdf src/so_arm101_urdf/description/urdf/robot.urdf.xacro \
   --base-path src/so_arm101_urdf/description \
   --controller-config src/so_arm101_urdf/config/controllers.yaml \
   --output-dir "$OUT" \
@@ -207,7 +207,7 @@ No `package.xml` dependency on `lucy_ros2_control` (avoid cycles). Keep both pac
 | | InMoov / Thais | SO-ARM101 |
 |--|----------------|-----------|
 | Form factor | Full humanoid | Single 6-DOF arm |
-| Entry xacro | `inmoov.urdf.xacro` | `so_arm101.urdf.xacro` |
+| Entry xacro | `inmoov.urdf.xacro` | `robot.urdf.xacro` |
 | Meshes | Collada DAE | STL |
 | Servos | PWM hobby | STS3215 bus (schema still PWM-typed) |
 | Controllers | left/right arm + torso_head | `so_arm_controller` |
