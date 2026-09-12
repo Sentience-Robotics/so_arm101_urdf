@@ -55,7 +55,8 @@ so_arm101_urdf/
 │       ├── gazebo.xacro                            # generated
 │       └── gazebo_bridge.yaml                      # generated
 ├── worlds/default.sdf
-└── test/test_xacro_smoke.py
+├── scripts/apply_lerobot_calibration.py
+└── test/                   # test_xacro_smoke.py, test_apply_lerobot_calibration.py
 ```
 
 ---
@@ -131,7 +132,38 @@ ros2 run xacro xacro description/urdf/so_arm101.urdf.xacro \
 
 ---
 
-## 7. Regenerating configs
+## 7. Applying a LeRobot calibration
+
+`lerobot-calibrate` records each servo's travel in raw STS3215 ticks. The
+hardware YAML wants the same windows in degrees, on the scale the firmware maps
+onto ticks (`BusServoConfig`: 0-360 deg over 0-4096 pulse, so
+`deg = ticks * 360/4096`).
+
+```bash
+cd src/so_arm101_urdf
+scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm>.json
+```
+
+It patches `config/hardware/active.yaml` and the preset named in
+`active_meta.yaml`, so re-activating that preset does not undo the calibration.
+`--dry-run` reports without writing; `--config` targets a different file.
+
+Records are paired with actuators by servo bus id against `physical_pin`, not by
+name — LeRobot's joint names have no relation to `urdf_joint`. A record matching
+no actuator aborts the run before anything is written.
+
+`offset_deg` is set to 180 deg (2048 ticks), the homed centre the calibration
+establishes, rather than the midpoint of the window — those differ on any joint
+whose travel is not symmetric, the gripper especially. `direction` is left alone:
+it is checked against the 3D view on hardware, and `drive_mode` describes an
+inversion relative to LeRobot's URDF, not ours. A non-zero `drive_mode` is
+reported so it is not silently dropped.
+
+Regenerate afterwards (below) so the new windows reach the ros2_control xacro.
+
+---
+
+## 8. Regenerating configs
 
 From `lucy_ws` (with workspace sourced / pixi shell):
 
@@ -158,7 +190,7 @@ Or use the control-panel **VALIDATE → ACTIVATE → RELOAD** pipeline with `rob
 
 ---
 
-## 8. Build and test
+## 9. Build and test
 
 ```bash
 colcon build --symlink-install --packages-select so_arm101_urdf
@@ -170,7 +202,7 @@ No `package.xml` dependency on `lucy_ros2_control` (avoid cycles). Keep both pac
 
 ---
 
-## 9. Differences from InMoov / Thais
+## 10. Differences from InMoov / Thais
 
 | | InMoov / Thais | SO-ARM101 |
 |--|----------------|-----------|
@@ -183,7 +215,7 @@ No `package.xml` dependency on `lucy_ros2_control` (avoid cycles). Keep both pac
 
 ---
 
-## 10. Future work
+## 11. Future work
 
 - Hardware serial IDs / bus-servo firmware
 - Closed-loop encoder → `/joint_states`

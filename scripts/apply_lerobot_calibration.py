@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+# Copyright 2025 Sentience Robotics Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+Apply a LeRobot follower calibration to the Lucy hardware config.
+
+`lerobot-calibrate` writes a JSON of per-motor records in raw STS3215 encoder
+ticks::
+
+    {"shoulder_pan": {"id": 1, "drive_mode": 0, "homing_offset": -1710,
+                      "range_min": 768, "range_max": 3273}, ...}
+
+Lucy stores the same windows as degrees, on the scale the firmware maps onto
+ticks: `BusServoConfig` in lucy_embedded_firmware/firmwares/rp2040 spans
+0-360 deg over 0-4096 pulse, so `deg = ticks * 360/4096`.
+
+Matching is by servo bus id against each actuator's `physical_pin`, not by
+name: the calibration's keys are LeRobot's joint names and carry no relation to
+`urdf_joint`. Every record must find an actuator, otherwise the run fails
+without writing -- a partly applied calibration drives some joints against a
+window measured for others.
+
+What is written per matched actuator:
+
+- `servo_min_deg` / `servo_max_deg` from `range_min` / `range_max`
+- `offset_deg` / `servo_default_deg` at the homed centre (2048 ticks = 180 deg).
+  Calibration writes a homing offset that centres each joint there, so that is
+  the servo angle at joint zero -- not the midpoint of the window, which is only
+  the same number on a joint whose travel happens to be symmetric.
+- the `min_value` / `max_value` of any sensor whose `associated_actuator`
+  matches, so encoder bounds stay in the same space as the actuator.
+
+`direction` is deliberately untouched: it is a Lucy-side convention checked
+against the 3D view on real hardware, and `drive_mode` describes an inversion
+relative to LeRobot's own URDF, not ours. A non-zero `drive_mode` is reported
+so it is not silently ignored.
+
+The file is edited in place as text rather than re-serialised, so comments and
+layout survive. Nothing here touches the generated ros2_control xacro -- run the
+config generator afterwards.
+
+Usage::
+
+    scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/\
+        calibration/robots/so101_follower/my_arm.json
+    scripts/apply_lerobot_calibration.py cal.json --dry-run
+    scripts/apply_lerobot_calibration.py cal.json --config path/to/other.yaml
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+# The firmware maps 0-360 deg linearly onto the servo's 0-4096 tick span, so a
+# "degree" in the hardware YAML is just a tick in another unit.
+TICKS_PER_TURN = 4096
+DEGREES_PER_TURN = 360
+# Calibration centres every joint here, which is what makes it joint zero.
+CENTRE_TICKS = TICKS_PER_TURN // 2
+
+REQUIRED_RECORD_KEYS = ('id', 'range_min', 'range_max')
+
+
+class CalibrationError(RuntimeError):
+    """A calibration that cannot be applied to this config."""
+
+
+def ticks_to_degrees(ticks: float) -> float:
+    """Convert raw encoder ticks to the degrees the hardware YAML stores."""
+    return round(ticks * DEGREES_PER_TURN / TICKS_PER_TURN, 2)
+
+
+def load_calibration(path: Path) -> dict[str, dict]:
+    """Read a lerobot-calibrate JSON, rejecting records missing required keys."""
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as e:
+        raise CalibrationError(f'cannot read calibration {path}: {e}') from e
+    if not isinstance(data, dict) or not data:
+        raise CalibrationError(f'{path}: expected a non-empty object of motor records')
+
+    for motor, record in data.items():
+        if not isinstance(record, dict):
+            raise CalibrationError(f'{path}: {motor!r} is not an object')
+        missing = [k for k in REQUIRED_RECORD_KEYS if k not in record]
+        if missing:
+            raise CalibrationError(f'{path}: {motor!r} is missing {missing}')
+        if record['range_min'] >= record['range_max']:
+            raise CalibrationError(
+                f'{path}: {motor!r} has range_min {record["range_min"]} '
+                f'>= range_max {record["range_max"]}'
+            )
+    return data
+
+
+def plan(calibration: dict[str, dict], config: dict) -> tuple[dict, list[str]]:
+    """
+    Pair calibration records with actuators by servo id, and derive their values.
+
+    Returns the per-actuator-id field updates plus any warnings worth printing.
+    Raises when a record matches no actuator or two actuators share its id.
+    """
+    actuators = config.get('actuators') or []
+    warnings: list[str] = []
+    updates: dict[str, dict[str, float]] = {}
+
+    by_pin: dict[int, list[str]] = {}
+    for actuator in actuators:
+        pin = actuator.get('physical_pin')
+        if pin is not None:
+            by_pin.setdefault(int(pin), []).append(str(actuator['id']))
+
+    centre = ticks_to_degrees(CENTRE_TICKS)
+    for motor, record in sorted(calibration.items(), key=lambda kv: kv[1]['id']):
+        servo_id = int(record['id'])
+        matched = by_pin.get(servo_id, [])
+        if not matched:
+            raise CalibrationError(
+                f'{motor!r} (servo id {servo_id}) matches no actuator: no '
+                f'physical_pin {servo_id} in the config'
+            )
+        if len(matched) > 1:
+            raise CalibrationError(
+                f'{motor!r} (servo id {servo_id}) matches several actuators '
+                f'({", ".join(matched)}); physical_pin must be unique'
+            )
+        if record.get('drive_mode'):
+            warnings.append(
+                f'{motor}: drive_mode={record["drive_mode"]} means LeRobot drives '
+                f'this joint inverted. direction is left at its current value; '
+                f'check {matched[0]} against the 3D view.'
+            )
+        updates[matched[0]] = {
+            'offset_deg': centre,
+            'servo_min_deg': ticks_to_degrees(record['range_min']),
+            'servo_max_deg': ticks_to_degrees(record['range_max']),
+            'servo_default_deg': centre,
+        }
+
+    unmatched = [str(a['id']) for a in actuators if str(a['id']) not in updates]
+    if unmatched:
+        warnings.append(
+            f'no calibration record for: {", ".join(sorted(unmatched))} '
+            f'(left untouched)'
+        )
+    return updates, warnings
+
+
+def sensor_updates(config: dict, updates: dict[str, dict]) -> dict[str, dict]:
+    """Mirror each actuator's new window onto the sensors that report on it."""
+    out: dict[str, dict[str, float]] = {}
+    for sensor in config.get('sensors') or []:
+        actuator = str(sensor.get('associated_actuator', ''))
+        if actuator in updates:
+            out[str(sensor['id'])] = {
+                'min_value': updates[actuator]['servo_min_deg'],
+                'max_value': updates[actuator]['servo_max_deg'],
+            }
+    return out
+
+
+def _block_span(text: str, entry_id: str) -> tuple[int, int]:
+    """Character span of the `- id: <entry_id>` list entry, up to the next one."""
+    opener = re.search(rf'(?m)^\s*-\s+id:\s+{re.escape(entry_id)}\s*$', text)
+    if opener is None:
+        raise CalibrationError(f'no "- id: {entry_id}" entry found')
+    start = opener.start()
+    following = re.search(r'(?m)^\s*-\s+id:\s+\S+\s*$', text[opener.end():])
+    end = opener.end() + following.start() if following else len(text)
+    return start, end
+
+
+def apply_updates(text: str, updates: dict[str, dict]) -> str:
+    """Rewrite the named keys inside each entry, leaving comments and order alone."""
+    for entry_id, fields in updates.items():
+        start, end = _block_span(text, entry_id)
+        block = text[start:end]
+        for key, value in fields.items():
+            block, count = re.subn(
+                rf'(?m)^(\s*{key}:).*$', rf'\g<1> {value:g}', block
+            )
+            if count != 1:
+                raise CalibrationError(
+                    f'{entry_id}: expected one "{key}:" line, found {count}'
+                )
+        text = text[:start] + block + text[end:]
+    return text
+
+
+def default_targets(package_root: Path) -> list[Path]:
+    """Return the active config, plus the preset behind it, so re-activation keeps this."""
+    targets = [package_root / 'config/hardware/active.yaml']
+    meta = package_root / 'config/hardware/active_meta.yaml'
+    try:
+        name = (yaml.safe_load(meta.read_text(encoding='utf-8')) or {}).get('name')
+    except (OSError, yaml.YAMLError):
+        return targets
+    if isinstance(name, str) and name.strip():
+        preset = package_root / 'config/hardware/configs' / f'{name.strip()}.yaml'
+        if preset.exists():
+            targets.append(preset)
+    return targets
+
+
+def apply_to_file(path: Path, calibration: dict[str, dict]) -> tuple[str, list[str]]:
+    """Return the rewritten text for one config, plus its warnings."""
+    text = path.read_text(encoding='utf-8')
+    config = yaml.safe_load(text) or {}
+    updates, warnings = plan(calibration, config)
+    updates.update(sensor_updates(config, updates))
+    return apply_updates(text, updates), warnings
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Apply the calibration named on the command line, or report why it cannot be."""
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    parser.add_argument('calibration', type=Path, help='lerobot-calibrate JSON')
+    parser.add_argument(
+        '--config',
+        type=Path,
+        action='append',
+        dest='configs',
+        help='hardware YAML to patch (repeatable; default: active.yaml + its preset)',
+    )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='report what would change without writing',
+    )
+    args = parser.parse_args(argv)
+
+    package_root = Path(__file__).resolve().parents[1]
+    targets = args.configs or default_targets(package_root)
+
+    try:
+        calibration = load_calibration(args.calibration)
+        results = [(path, *apply_to_file(path, calibration)) for path in targets]
+    except CalibrationError as e:
+        print(f'error: {e}', file=sys.stderr)
+        return 1
+
+    for message in dict.fromkeys(w for _, _, warns in results for w in warns):
+        print(f'warning: {message}', file=sys.stderr)
+
+    for path, new_text, _ in results:
+        unchanged = new_text == path.read_text(encoding='utf-8')
+        if args.dry_run:
+            print(f'{path}: {"no change" if unchanged else "would be updated"}')
+            continue
+        if unchanged:
+            print(f'{path}: already up to date')
+        else:
+            path.write_text(new_text, encoding='utf-8')
+            print(f'{path}: updated')
+
+    if not args.dry_run:
+        print(
+            '\nRegenerate the ros2_control xacro so the new windows reach '
+            'ros2_control, then restart the stack.'
+        )
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
