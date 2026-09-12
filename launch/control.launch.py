@@ -35,7 +35,6 @@ from launch.substitutions import LaunchConfiguration
 import yaml
 
 
-
 def controllers_to_spawn(controllers_yaml_path: Path) -> list[str]:
     """Return controller names under controller_manager.ros__parameters (except update_rate)."""
     data = yaml.safe_load(controllers_yaml_path.read_text(encoding='utf-8')) or {}
@@ -48,6 +47,7 @@ def controllers_to_spawn(controllers_yaml_path: Path) -> list[str]:
         names.remove(jsb)
         return [jsb, *names]
     return names
+
 
 _DEFAULT_GENERATED_FILES = {
     "ros2_control_xacro": "so_arm101_ros2_control.xacro",
@@ -131,7 +131,8 @@ def generate_launch_description():
     )
 
     def spawner_actions_from_yaml(context, *args, **kwargs):
-        """Spawners, chained so only one waits on controller_manager at a time.
+        """
+        Spawn controllers, chained so only one waits on controller_manager at a time.
 
         A spawner holds a global lock while waiting for the controller_manager
         services, so concurrent ones each burn a full 20s lock attempt. Chaining
