@@ -60,8 +60,8 @@
         <param name="servo_max_deg">270.97</param>
         <param name="servo_default_deg">180</param>
         <command_interface name="position">
-          <param name="min">-1.178</param>
-          <param name="max">1.178</param>
+          <param name="min">-1.81317</param>
+          <param name="max">1.58767</param>
         </command_interface>
         <state_interface name="position" />
       </joint>
