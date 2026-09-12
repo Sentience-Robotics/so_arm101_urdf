@@ -16,45 +16,10 @@
 """
 Apply a LeRobot follower calibration to the Lucy hardware config.
 
-`lerobot-calibrate` writes a JSON of per-motor records in raw STS3215 encoder
-ticks::
-
-    {"shoulder_pan": {"id": 1, "drive_mode": 0, "homing_offset": -1710,
-                      "range_min": 768, "range_max": 3273}, ...}
-
-Lucy stores the same windows as degrees, on the scale the firmware maps onto
-ticks: `BusServoConfig` in lucy_embedded_firmware/firmwares/rp2040 spans
-0-360 deg over 0-4096 pulse, so `deg = ticks * 360/4096`.
-
-Matching is by servo bus id against each actuator's `physical_pin`, not by
-name: the calibration's keys are LeRobot's joint names and carry no relation to
-`urdf_joint`. Every record must find an actuator, otherwise the run fails
-without writing -- a partly applied calibration drives some joints against a
-window measured for others.
-
-What is written per matched actuator:
-
-- `servo_min_deg` / `servo_max_deg` from `range_min` / `range_max`
-- `offset_deg` / `servo_default_deg` at the homed centre (2048 ticks = 180 deg).
-  Calibration writes a homing offset that centres each joint there, so that is
-  the servo angle at joint zero -- not the midpoint of the window, which is only
-  the same number on a joint whose travel happens to be symmetric.
-- the `min_value` / `max_value` of any sensor whose `associated_actuator`
-  matches, so encoder bounds stay in the same space as the actuator.
-
-`direction` is deliberately untouched: it is a Lucy-side convention checked
-against the 3D view on real hardware, and `drive_mode` describes an inversion
-relative to LeRobot's own URDF, not ours. A non-zero `drive_mode` is reported
-so it is not silently ignored.
-
-The file is edited in place as text rather than re-serialised, so comments and
-layout survive. Nothing here touches the generated ros2_control xacro -- run the
-config generator afterwards.
-
 Usage::
+    cd src/so_arm101_urdf
+    scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm>.json
 
-    scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/\
-        calibration/robots/so101_follower/my_arm.json
     scripts/apply_lerobot_calibration.py cal.json --dry-run
     scripts/apply_lerobot_calibration.py cal.json --config path/to/other.yaml
 """
