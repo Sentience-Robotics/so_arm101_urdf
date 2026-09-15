@@ -187,7 +187,15 @@ cp "$OUT"/so_arm101_ros2_control.xacro \
 cp "$OUT"/controllers.yaml src/so_arm101_urdf/config/
 cp "$OUT"/gazebo.xacro "$OUT"/gazebo_bridge.yaml \
   src/so_arm101_urdf/description/gazebo/
+
+# Register layout for the firmware. Needs a reflash to take effect.
+cp "$OUT"/config_rp2040_so_arm.rs \
+  src/lucy_embedded_firmware/firmwares/rp2040/src/generated_config.rs
 ```
+
+`config_<board>.rs` carries `BUS_SERVO_SLOTS`, the number of register blocks the
+firmware scans. The board is `bus_servo_only`, so the generator emits Rust for it
+rather than the `config_<board>.c` a PWM board gets.
 
 Or use the control-panel **VALIDATE → ACTIVATE → RELOAD** pipeline with `robot_package:=so_arm101_urdf`.
 
