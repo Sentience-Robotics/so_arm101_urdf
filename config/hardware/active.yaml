@@ -18,7 +18,7 @@ controller_manager:
 boards:
   rp2040_so_arm:
     serial_id: ''
-    board_class: internal_servo_only
+    board_class: bus_servo_only
     internal_servo_slots: 6
     firmware_target: pico_micro_ros_so_arm
     compile_definition: USE_SO_ARM
@@ -44,8 +44,8 @@ actuators:
     offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: 67.5
-    servo_max_deg: 287.67
+    servo_min_deg: 62.31
+    servo_max_deg: 283.8
     servo_default_deg: 180
     enabled: true
   - id: pitch
@@ -57,8 +57,8 @@ actuators:
     offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: 66.18
-    servo_max_deg: 284.15
+    servo_min_deg: 73.65
+    servo_max_deg: 282.13
     servo_default_deg: 180
     enabled: true
 
@@ -71,8 +71,8 @@ actuators:
     offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: 76.11
-    servo_max_deg: 270.97
+    servo_min_deg: 74.27
+    servo_max_deg: 271.14
     servo_default_deg: 180
     enabled: true
   - id: wrist_pitch
@@ -84,8 +84,8 @@ actuators:
     offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: 78.57
-    servo_max_deg: 284.85
+    servo_min_deg: 70.14
+    servo_max_deg: 279.76
     servo_default_deg: 180
     enabled: true
   - id: wrist_roll
@@ -110,8 +110,8 @@ actuators:
     offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: 179.82
-    servo_max_deg: 288.02
+    servo_min_deg: 178.68
+    servo_max_deg: 309.81
     servo_default_deg: 180
     enabled: true
 
@@ -125,8 +125,8 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 0
     physical_pin: 1
-    min_value: 67.5
-    max_value: 287.67
+    min_value: 62.31
+    max_value: 283.8
     enabled: false
   - id: pitch_encoder
     type: encoder
@@ -134,8 +134,8 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 1
     physical_pin: 2
-    min_value: 66.18
-    max_value: 284.15
+    min_value: 73.65
+    max_value: 282.13
     enabled: false
   - id: elbow_encoder
     type: encoder
@@ -143,8 +143,8 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 2
     physical_pin: 3
-    min_value: 76.11
-    max_value: 270.97
+    min_value: 74.27
+    max_value: 271.14
     enabled: false
 
   - id: wrist_pitch_encoder
@@ -153,8 +153,8 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 3
     physical_pin: 4
-    min_value: 78.57
-    max_value: 284.85
+    min_value: 70.14
+    max_value: 279.76
     enabled: false
   - id: wrist_roll_encoder
     type: encoder
@@ -171,6 +171,6 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 5
     physical_pin: 6
-    min_value: 179.82
-    max_value: 288.02
+    min_value: 178.68
+    max_value: 309.81
     enabled: false
