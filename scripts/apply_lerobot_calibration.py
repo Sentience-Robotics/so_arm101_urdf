@@ -87,11 +87,11 @@ def plan(calibration: dict[str, dict], config: dict) -> tuple[dict, list[str]]:
     warnings: list[str] = []
     updates: dict[str, dict[str, float]] = {}
 
-    by_pin: dict[int, list[str]] = {}
+    by_pin: dict[int, list[dict]] = {}
     for actuator in actuators:
         pin = actuator.get('physical_pin')
         if pin is not None:
-            by_pin.setdefault(int(pin), []).append(str(actuator['id']))
+            by_pin.setdefault(int(pin), []).append(actuator)
 
     centre = ticks_to_degrees(CENTRE_TICKS)
     for motor, record in sorted(calibration.items(), key=lambda kv: kv[1]['id']):
@@ -103,22 +103,26 @@ def plan(calibration: dict[str, dict], config: dict) -> tuple[dict, list[str]]:
                 f'physical_pin {servo_id} in the config'
             )
         if len(matched) > 1:
+            ids = [str(a['id']) for a in matched]
             raise CalibrationError(
                 f'{motor!r} (servo id {servo_id}) matches several actuators '
-                f'({", ".join(matched)}); physical_pin must be unique'
+                f'({", ".join(ids)}); physical_pin must be unique'
             )
+        actuator = matched[0]
+        actuator_id = str(actuator['id'])
         if record.get('drive_mode'):
             warnings.append(
                 f'{motor}: drive_mode={record["drive_mode"]} means LeRobot drives '
                 f'this joint inverted. direction is left at its current value; '
-                f'check {matched[0]} against the 3D view.'
+                f'check {actuator_id} against the 3D view.'
             )
-        updates[matched[0]] = {
+        fields = {
             'offset_deg': centre,
             'servo_min_deg': ticks_to_degrees(record['range_min']),
             'servo_max_deg': ticks_to_degrees(record['range_max']),
             'servo_default_deg': centre,
         }
+        updates[actuator_id] = fields
 
     unmatched = [str(a['id']) for a in actuators if str(a['id']) not in updates]
     if unmatched:
@@ -238,8 +242,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.dry_run:
         print(
-            '\nRegenerate the ros2_control xacro so the new windows reach '
-            'ros2_control, then restart the stack.'
+            '\nRegenerate the package configs so the new windows reach the '
+            'ros2_control and gazebo xacros (see DEVELOPER.md), then restart '
+            'the stack.'
         )
     return 0
 

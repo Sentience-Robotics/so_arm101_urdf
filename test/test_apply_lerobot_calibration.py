@@ -197,23 +197,37 @@ def test_missing_key_is_rejected(tmp_path):
         mod.load_calibration(path)
 
 
-def test_real_config_round_trips(tmp_path):
+REAL_CALIBRATION = {
+    'shoulder_pan': {'id': 1, 'drive_mode': 0, 'homing_offset': -1981,
+                     'range_min': 709, 'range_max': 3229},
+    'shoulder_lift': {'id': 2, 'drive_mode': 0, 'homing_offset': -1635,
+                      'range_min': 838, 'range_max': 3210},
+    'elbow_flex': {'id': 3, 'drive_mode': 0, 'homing_offset': 1105,
+                   'range_min': 845, 'range_max': 3085},
+    'wrist_flex': {'id': 4, 'drive_mode': 0, 'homing_offset': 1690,
+                   'range_min': 798, 'range_max': 3183},
+    'wrist_roll': {'id': 5, 'drive_mode': 0, 'homing_offset': 1819,
+                   'range_min': 0, 'range_max': 4095},
+    'gripper': {'id': 6, 'drive_mode': 0, 'homing_offset': 1382,
+                'range_min': 2033, 'range_max': 3525},
+}
+
+
+def test_real_config_round_trips():
     """The committed config is what this tool produces from the recorded ticks."""
-    calibration = {
-        'shoulder_pan': {'id': 1, 'drive_mode': 0, 'homing_offset': -1710,
-                         'range_min': 768, 'range_max': 3273},
-        'shoulder_lift': {'id': 2, 'drive_mode': 0, 'homing_offset': -1026,
-                          'range_min': 753, 'range_max': 3233},
-        'elbow_flex': {'id': 3, 'drive_mode': 0, 'homing_offset': 1605,
-                       'range_min': 866, 'range_max': 3083},
-        'wrist_flex': {'id': 4, 'drive_mode': 0, 'homing_offset': -2029,
-                       'range_min': 894, 'range_max': 3241},
-        'wrist_roll': {'id': 5, 'drive_mode': 0, 'homing_offset': 1893,
-                       'range_min': 0, 'range_max': 4095},
-        'gripper': {'id': 6, 'drive_mode': 0, 'homing_offset': 1534,
-                    'range_min': 2046, 'range_max': 3277},
-    }
     active = ROOT / 'config/hardware/active.yaml'
-    out, warnings = mod.apply_to_file(active, calibration)
+    out, warnings = mod.apply_to_file(active, REAL_CALIBRATION)
     assert out == active.read_text(encoding='utf-8')
     assert not warnings
+
+
+def test_main_is_self_sufficient_for_the_real_package(tmp_path, capsys):
+    """One invocation covers active.yaml and the preset behind it."""
+    cal_path = tmp_path / 'cal.json'
+    cal_path.write_text(json.dumps(REAL_CALIBRATION), encoding='utf-8')
+    rc = mod.main([str(cal_path), '--dry-run'])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert 'active.yaml: no change' in out
+    # The xacro is generated from active.yaml, so this tool must not touch it.
+    assert 'so_arm101_ros2_control.xacro' not in out

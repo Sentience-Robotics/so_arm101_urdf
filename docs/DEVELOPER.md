@@ -159,7 +159,10 @@ it is checked against the 3D view on hardware, and `drive_mode` describes an
 inversion relative to LeRobot's URDF, not ours. A non-zero `drive_mode` is
 reported so it is not silently dropped.
 
-Regenerate afterwards (below) so the new windows reach the ros2_control xacro.
+Regenerating afterwards (below) is required, not optional: the script writes
+only the hardware YAML, and both `so_arm101_ros2_control.xacro` and
+`gazebo.xacro` carry the same windows. Skipping it leaves the stack, and Gazebo
+especially, on the previous calibration.
 
 ---
 
