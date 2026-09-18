@@ -18,7 +18,8 @@ Apply a LeRobot follower calibration to the Lucy hardware config.
 
 Usage::
     cd src/so_arm101_urdf
-    scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm>.json
+    scripts/apply_lerobot_calibration.py \
+        ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm>.json
 
     scripts/apply_lerobot_calibration.py cal.json --dry-run
     scripts/apply_lerobot_calibration.py cal.json --config path/to/other.yaml
