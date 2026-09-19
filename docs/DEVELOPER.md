@@ -134,8 +134,8 @@ ros2 run xacro xacro description/urdf/robot.urdf.xacro \
 
 ## 7. Applying a LeRobot calibration
 
-`lerobot-calibrate` records each servo's travel in raw STS3215 ticks. The
-hardware YAML wants the same windows in degrees, on the scale the firmware maps
+`lerobot-calibrate` records each servo's travel in raw STS3215 ticks.
+The hardware YAML wants the same windows in degrees, on the scale the firmware maps
 onto ticks (`BusServoConfig`: 0-360 deg over 0-4096 pulse, so
 `deg = ticks * 360/4096`).
 
@@ -145,24 +145,7 @@ scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/ro
 ```
 
 It patches `config/hardware/active.yaml` and the preset named in
-`active_meta.yaml`, so re-activating that preset does not undo the calibration.
-`--dry-run` reports without writing; `--config` targets a different file.
-
-Records are paired with actuators by servo bus id against `physical_pin`, not by
-name — LeRobot's joint names have no relation to `urdf_joint`. A record matching
-no actuator aborts the run before anything is written.
-
-`offset_deg` is set to 180 deg (2048 ticks), the homed centre the calibration
-establishes, rather than the midpoint of the window — those differ on any joint
-whose travel is not symmetric, the gripper especially. `direction` is left alone:
-it is checked against the 3D view on hardware, and `drive_mode` describes an
-inversion relative to LeRobot's URDF, not ours. A non-zero `drive_mode` is
-reported so it is not silently dropped.
-
-Regenerating afterwards (below) is required, not optional: the script writes
-only the hardware YAML, and both `so_arm101_ros2_control.xacro` and
-`gazebo.xacro` carry the same windows. Skipping it leaves the stack, and Gazebo
-especially, on the previous calibration.
+`active_meta.yaml`.
 
 ---
 
@@ -193,9 +176,7 @@ cp "$OUT"/config_rp2040_so_arm.rs \
   src/lucy_embedded_firmware/firmwares/rp2040/src/generated_config.rs
 ```
 
-`config_<board>.rs` carries `BUS_SERVO_SLOTS`, the number of register blocks the
-firmware scans. The board is `bus_servo_only`, so the generator emits Rust for it
-rather than the `config_<board>.c` a PWM board gets.
+`config_<board>.rs` carries `BUS_SERVO_SLOTS`, the number of register blocks the firmware scans.
 
 Or use the control-panel **VALIDATE → ACTIVATE → RELOAD** pipeline with `robot_package:=so_arm101_urdf`.
 

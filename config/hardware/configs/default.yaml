@@ -29,12 +29,6 @@ boards:
       type: joint_trajectory_controller/JointTrajectoryController
 
 actuators:
-# Servo degrees on the firmware scale: 0-360 deg maps onto the STS3215
-# 0-4096 tick span (BusServoConfig in firmwares/rp2040), so deg = ticks * 360/4096.
-# Windows are the recorded LeRobot follower calibration; offset_deg 180 is the homed
-# centre (2048 ticks), which the calibration puts at joint zero.
-  # STS3215 smart bus servos. servo_type is the PWM-family field the schema still
-  # requires; the generated xacro drives them through the bus_servo path.
   - id: rotation
     urdf_joint: Rotation
     board: rp2040_so_arm
@@ -116,9 +110,6 @@ actuators:
     enabled: true
 
 sensors:
-  # Magnetic encoder feedback placeholders (STS3215 Present_Position, 4096 ticks/rev).
-  # Lucy firmware currently publishes pressure-style sensors only; keep disabled until
-  # bus-servo encoder reading is implemented. Schema still requires virtual/physical pins.
   - id: rotation_encoder
     type: encoder
     associated_actuator: rotation

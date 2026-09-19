@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Real robot / RViz-only: lucy_control_supervisor owns RSP + ros2_control_node;
-# spawners are started here.
+# Real robot / RViz-only: lucy_control_supervisor owns RSP + ros2_control_node.
+# Spawners are started here.
 
 from pathlib import Path
 
