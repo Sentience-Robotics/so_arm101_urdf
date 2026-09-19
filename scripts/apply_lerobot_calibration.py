@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # Copyright 2025-2026 Sentience Robotics Team
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# Licensed under the GNU General Public License, Version 3.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful but WITHOUT ANY WARRANTY.
-# Without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#     https://www.gnu.org/licenses/gpl-3.0.html
 #
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """
 Apply a LeRobot follower calibration to the Lucy hardware config.
 
@@ -32,7 +34,8 @@ from pathlib import Path
 
 import yaml
 
-# The firmware maps 0-360 deg linearly onto the servo's 0-4096 tick span, so a "degree" in the hardware YAML is just a tick in another unit.
+# The firmware maps 0-360 deg linearly onto the servo's 0-4096 tick span,
+# so a "degree" in the hardware YAML is just a tick in another unit.
 TICKS_PER_TURN = 4096
 DEGREES_PER_TURN = 360
 # Calibration centres every joint here, which is what makes it joint zero.
