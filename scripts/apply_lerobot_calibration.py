@@ -153,7 +153,7 @@ def _block_span(text: str, entry_id: str) -> tuple[int, int]:
     if opener is None:
         raise CalibrationError(f'no "- id: {entry_id}" entry found')
     start = opener.start()
-    following = re.search(r"(?m)^\s*-\s+id:\s+\S+\s*$", text[opener.end() :])
+    following = re.search(r"(?m)^\s*-\s+id:\s+\S+\s*$", text[opener.end():])
     end = opener.end() + following.start() if following else len(text)
     return start, end
 
