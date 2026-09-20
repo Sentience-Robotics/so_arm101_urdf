@@ -63,18 +63,18 @@ so_arm101_urdf/
 
 ## 3. Joints and hardware
 
-| Joint | Approx. range | Servo |
-|-------|---------------|-------|
-| `Rotation` | ±110° | STS3215 |
-| `Pitch` | ±100° | STS3215 |
-| `Elbow` | −100° … 90° | STS3215 |
-| `Wrist_Pitch` | ±95° | STS3215 |
-| `Wrist_Roll` | ±160° | STS3215 |
-| `Jaw` | −10° … 100° | STS3215 |
+| Joint | Approx. range (rad) | Servo |
+|-------|---------------------|-------|
+| `Rotation` | ±1.92 | STS3215 |
+| `Pitch` | ±1.75 | STS3215 |
+| `Elbow` | −1.81 … 1.59 | STS3215 |
+| `Wrist_Pitch` | ±1.66 | STS3215 |
+| `Wrist_Roll` | ±2.79 | STS3215 |
+| `Jaw` | −0.17 … 1.75 | STS3215 |
 
 Kinematics come from the calibrated `so101_new_calib.urdf` (SO-ARM100 / onshape-to-robot lineage).
 
-**Lucy schema note:** `servo_type` must be `180` / `270` / `300`. Hardware YAML uses `'300'` as a stand-in until bus-servo support exists. Pin numbers and serial IDs are placeholders for hardware integration.
+**Lucy schema note:** `servo_type` must be `180` / `270` / `300` (PWM-family field; SO-ARM uses `'300'` as a stand-in). Actuators are `board_class: bus_servo_only` → Rust crate `firmwares/rp2040_bus_servo`. `physical_pin` is the STS3215 bus id. `firmware.source_dir` is `lucy_embedded_firmware`; UF2 target is `lucy_so_arm`.
 
 ---
 
@@ -134,10 +134,10 @@ ros2 run xacro xacro description/urdf/robot.urdf.xacro \
 
 ## 7. Applying a LeRobot calibration
 
-`lerobot-calibrate` records each servo's travel in raw STS3215 ticks.
-The hardware YAML wants the same windows in degrees, on the scale the firmware maps
-onto ticks (`BusServoConfig`: 0-360 deg over 0-4096 pulse, so
-`deg = ticks * 360/4096`).
+`lerobot-calibrate` records each servo's travel in raw STS3215 ticks. The
+hardware YAML stores the same windows in **radians**, on the scale the firmware
+maps onto ticks (`BusServoConfig`: 0–2π rad over 0–4096 ticks, so
+`rad = ticks * 2π / 4096`).
 
 ```bash
 cd src/so_arm101_urdf
@@ -145,7 +145,24 @@ scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/ro
 ```
 
 It patches `config/hardware/active.yaml` and the preset named in
-`active_meta.yaml`.
+`active_meta.yaml`, so re-activating that preset does not undo the calibration.
+`--dry-run` reports without writing; `--config` targets a different file.
+
+Records are paired with actuators by servo bus id against `physical_pin`, not by
+name — LeRobot's joint names have no relation to `urdf_joint`. A record matching
+no actuator aborts the run before anything is written.
+
+`offset_rad` is set to π (2048 ticks), the homed centre the calibration
+establishes, rather than the midpoint of the window — those differ on any joint
+whose travel is not symmetric, the gripper especially. `direction` is left alone:
+it is checked against the 3D view on hardware, and `drive_mode` describes an
+inversion relative to LeRobot's URDF, not ours. A non-zero `drive_mode` is
+reported so it is not silently dropped.
+
+Regenerating afterwards (below) is required, not optional: the script writes
+only the hardware YAML, and both `so_arm101_ros2_control.xacro` and
+`gazebo.xacro` carry the same windows. Skipping it leaves the stack, and Gazebo
+especially, on the previous calibration.
 
 ---
 
