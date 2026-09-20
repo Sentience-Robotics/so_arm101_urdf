@@ -47,7 +47,7 @@ def _default_paths():
         root = Path(__file__).resolve().parents[1]
     description = root / "description"
     return (
-        str(description / "urdf" / "so_arm101.urdf.xacro"),
+        str(description / "urdf" / "robot.urdf.xacro"),
         str(description),
         str(root / "config" / "controllers.yaml"),
     )

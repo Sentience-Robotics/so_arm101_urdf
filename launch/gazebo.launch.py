@@ -210,7 +210,7 @@ def generate_launch_description():
     )
     urdf_path_arg = DeclareLaunchArgument(
         "urdf_path",
-        default_value=os.path.join(default_base, "urdf", "so_arm101.urdf.xacro"),
+        default_value=os.path.join(default_base, "urdf", "robot.urdf.xacro"),
         description="Top-level robot xacro",
     )
     ros2_control_file_arg = DeclareLaunchArgument(

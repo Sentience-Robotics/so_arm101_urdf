@@ -18,7 +18,7 @@ controller_manager:
 boards:
   rp2040_so_arm:
     serial_id: ''
-    board_class: internal_servo_only
+    board_class: bus_servo_only
     internal_servo_slots: 6
     firmware_target: pico_micro_ros_so_arm
     compile_definition: USE_SO_ARM
@@ -29,20 +29,18 @@ boards:
       type: joint_trajectory_controller/JointTrajectoryController
 
 actuators:
-  # STS3215 smart bus servos — mapped to Lucy PWM schema (servo_type 300) until
-  # bus-servo hardware support lands. Negative min degrees match URDF joint span.
   - id: rotation
     urdf_joint: Rotation
     board: rp2040_so_arm
     virtual_pin: 0
     physical_pin: 1
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -110
-    servo_max_deg: 110
-    servo_default_deg: 0
+    servo_min_deg: 62.31
+    servo_max_deg: 283.8
+    servo_default_deg: 180
     enabled: true
   - id: pitch
     urdf_joint: Pitch
@@ -50,25 +48,26 @@ actuators:
     virtual_pin: 1
     physical_pin: 2
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -100
-    servo_max_deg: 100
-    servo_default_deg: 0
+    servo_min_deg: 73.65
+    servo_max_deg: 282.13
+    servo_default_deg: 180
     enabled: true
+
   - id: elbow
     urdf_joint: Elbow
     board: rp2040_so_arm
     virtual_pin: 2
     physical_pin: 3
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -100
-    servo_max_deg: 90
-    servo_default_deg: 0
+    servo_min_deg: 74.27
+    servo_max_deg: 271.14
+    servo_default_deg: 180
     enabled: true
   - id: wrist_pitch
     urdf_joint: Wrist_Pitch
@@ -76,12 +75,12 @@ actuators:
     virtual_pin: 3
     physical_pin: 4
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -95
-    servo_max_deg: 95
-    servo_default_deg: 0
+    servo_min_deg: 70.14
+    servo_max_deg: 279.76
+    servo_default_deg: 180
     enabled: true
   - id: wrist_roll
     urdf_joint: Wrist_Roll
@@ -89,12 +88,12 @@ actuators:
     virtual_pin: 4
     physical_pin: 5
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -160
-    servo_max_deg: 160
-    servo_default_deg: 0
+    servo_min_deg: 0
+    servo_max_deg: 359.91
+    servo_default_deg: 180
     enabled: true
   - id: jaw
     urdf_joint: Jaw
@@ -102,26 +101,23 @@ actuators:
     virtual_pin: 5
     physical_pin: 6
     servo_type: '300'
-    offset_deg: 0
+    offset_deg: 180
     direction: 1
     scale: 1
-    servo_min_deg: -10
-    servo_max_deg: 100
-    servo_default_deg: 0
+    servo_min_deg: 178.68
+    servo_max_deg: 309.81
+    servo_default_deg: 180
     enabled: true
 
 sensors:
-  # Magnetic encoder feedback placeholders (STS3215 Present_Position, 4096 ticks/rev).
-  # Lucy firmware currently publishes pressure-style sensors only; keep disabled until
-  # bus-servo encoder reading is implemented. Schema still requires virtual/physical pins.
   - id: rotation_encoder
     type: encoder
     associated_actuator: rotation
     board: rp2040_so_arm
     virtual_pin: 0
     physical_pin: 1
-    min_value: 0
-    max_value: 4095
+    min_value: 62.31
+    max_value: 283.8
     enabled: false
   - id: pitch_encoder
     type: encoder
@@ -129,8 +125,8 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 1
     physical_pin: 2
-    min_value: 0
-    max_value: 4095
+    min_value: 73.65
+    max_value: 282.13
     enabled: false
   - id: elbow_encoder
     type: encoder
@@ -138,17 +134,18 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 2
     physical_pin: 3
-    min_value: 0
-    max_value: 4095
+    min_value: 74.27
+    max_value: 271.14
     enabled: false
+
   - id: wrist_pitch_encoder
     type: encoder
     associated_actuator: wrist_pitch
     board: rp2040_so_arm
     virtual_pin: 3
     physical_pin: 4
-    min_value: 0
-    max_value: 4095
+    min_value: 70.14
+    max_value: 279.76
     enabled: false
   - id: wrist_roll_encoder
     type: encoder
@@ -157,7 +154,7 @@ sensors:
     virtual_pin: 4
     physical_pin: 5
     min_value: 0
-    max_value: 4095
+    max_value: 359.91
     enabled: false
   - id: jaw_encoder
     type: encoder
@@ -165,6 +162,6 @@ sensors:
     board: rp2040_so_arm
     virtual_pin: 5
     physical_pin: 6
-    min_value: 0
-    max_value: 4095
+    min_value: 178.68
+    max_value: 309.81
     enabled: false

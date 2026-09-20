@@ -44,7 +44,7 @@ so_arm101_urdf/
 │       ├── active_meta.yaml
 │       └── configs/default.yaml
 ├── description/
-│   ├── urdf/so_arm101.urdf.xacro
+│   ├── urdf/robot.urdf.xacro
 │   ├── robot_description/
 │   │   ├── urdf/properties.xacro
 │   │   ├── urdf/robot_description.urdf.xacro
@@ -55,7 +55,8 @@ so_arm101_urdf/
 │       ├── gazebo.xacro                            # generated
 │       └── gazebo_bridge.yaml                      # generated
 ├── worlds/default.sdf
-└── test/test_xacro_smoke.py
+├── scripts/apply_lerobot_calibration.py
+└── test/                   # test_xacro_smoke.py, test_apply_lerobot_calibration.py
 ```
 
 ---
@@ -114,7 +115,7 @@ LUCY_ROBOT_PACKAGE=so_arm101_urdf pixi run core
 
 ## 6. Xacro entry
 
-`description/urdf/so_arm101.urdf.xacro`:
+`description/urdf/robot.urdf.xacro`:
 
 - Includes properties + body
 - Unless `use_gazebo_sim`: includes generated `so_arm101_ros2_control.xacro`
@@ -123,7 +124,7 @@ LUCY_ROBOT_PACKAGE=so_arm101_urdf pixi run core
 Standalone expand:
 
 ```bash
-ros2 run xacro xacro description/urdf/so_arm101.urdf.xacro \
+ros2 run xacro xacro description/urdf/robot.urdf.xacro \
   base_path:=$(pwd)/description \
   controller_config:=$(pwd)/config/controllers.yaml \
   use_mock_hardware:=true
@@ -131,7 +132,24 @@ ros2 run xacro xacro description/urdf/so_arm101.urdf.xacro \
 
 ---
 
-## 7. Regenerating configs
+## 7. Applying a LeRobot calibration
+
+`lerobot-calibrate` records each servo's travel in raw STS3215 ticks.
+The hardware YAML wants the same windows in degrees, on the scale the firmware maps
+onto ticks (`BusServoConfig`: 0-360 deg over 0-4096 pulse, so
+`deg = ticks * 360/4096`).
+
+```bash
+cd src/so_arm101_urdf
+scripts/apply_lerobot_calibration.py ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm>.json
+```
+
+It patches `config/hardware/active.yaml` and the preset named in
+`active_meta.yaml`.
+
+---
+
+## 8. Regenerating configs
 
 From `lucy_ws` (with workspace sourced / pixi shell):
 
@@ -141,7 +159,7 @@ OUT=/tmp/so_arm101_gen
 mkdir -p "$OUT"
 generate_config \
   --input src/so_arm101_urdf/config/hardware/active.yaml \
-  --urdf src/so_arm101_urdf/description/urdf/so_arm101.urdf.xacro \
+  --urdf src/so_arm101_urdf/description/urdf/robot.urdf.xacro \
   --base-path src/so_arm101_urdf/description \
   --controller-config src/so_arm101_urdf/config/controllers.yaml \
   --output-dir "$OUT" \
@@ -152,13 +170,19 @@ cp "$OUT"/so_arm101_ros2_control.xacro \
 cp "$OUT"/controllers.yaml src/so_arm101_urdf/config/
 cp "$OUT"/gazebo.xacro "$OUT"/gazebo_bridge.yaml \
   src/so_arm101_urdf/description/gazebo/
+
+# Register layout for the firmware. Needs a reflash to take effect.
+cp "$OUT"/config_rp2040_so_arm.rs \
+  src/lucy_embedded_firmware/firmwares/rp2040/src/generated_config.rs
 ```
+
+`config_<board>.rs` carries `BUS_SERVO_SLOTS`, the number of register blocks the firmware scans.
 
 Or use the control-panel **VALIDATE → ACTIVATE → RELOAD** pipeline with `robot_package:=so_arm101_urdf`.
 
 ---
 
-## 8. Build and test
+## 9. Build and test
 
 ```bash
 colcon build --symlink-install --packages-select so_arm101_urdf
@@ -170,12 +194,12 @@ No `package.xml` dependency on `lucy_ros2_control` (avoid cycles). Keep both pac
 
 ---
 
-## 9. Differences from InMoov / Thais
+## 10. Differences from InMoov / Thais
 
 | | InMoov / Thais | SO-ARM101 |
 |--|----------------|-----------|
 | Form factor | Full humanoid | Single 6-DOF arm |
-| Entry xacro | `inmoov.urdf.xacro` | `so_arm101.urdf.xacro` |
+| Entry xacro | `inmoov.urdf.xacro` | `robot.urdf.xacro` |
 | Meshes | Collada DAE | STL |
 | Servos | PWM hobby | STS3215 bus (schema still PWM-typed) |
 | Controllers | left/right arm + torso_head | `so_arm_controller` |
@@ -183,7 +207,7 @@ No `package.xml` dependency on `lucy_ros2_control` (avoid cycles). Keep both pac
 
 ---
 
-## 10. Future work
+## 11. Future work
 
 - Hardware serial IDs / bus-servo firmware
 - Closed-loop encoder → `/joint_states`

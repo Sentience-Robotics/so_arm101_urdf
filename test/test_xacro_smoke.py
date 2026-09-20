@@ -26,14 +26,14 @@ def _so_arm101_paths():
         from ament_index_python.packages import get_package_share_directory
         share = Path(get_package_share_directory("so_arm101_urdf"))
         description = share / "description"
-        urdf = description / "urdf" / "so_arm101.urdf.xacro"
+        urdf = description / "urdf" / "robot.urdf.xacro"
         if urdf.is_file():
             return urdf, description
     except Exception:
         pass
     root = Path(__file__).resolve().parents[1]
     description = root / "description"
-    urdf = description / "urdf" / "so_arm101.urdf.xacro"
+    urdf = description / "urdf" / "robot.urdf.xacro"
     return urdf, description
 
 
